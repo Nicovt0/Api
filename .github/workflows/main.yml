@@ -15,44 +15,41 @@ jobs:
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.EC2_SSH_KEY }}
-        known_hosts: 'just-a-placeholder-so-we-dont-get-errors'
+        known_hosts: 'just-a-placeholder'
 
     - name: Connect to EC2 and deploy
       run: |
         ssh -o StrictHostKeyChecking=no -p ${{ secrets.EC2_PORT || 22 }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
           # 1. Actualizar código
-          cd /home/ec2-user/Api || (git clone https://github.com/Nicovt0/Api.git /home/ec2-user/Api && cd /home/ec2-user/Api)
+          cd /home/ec2-user/mybank-api || (git clone https://github.com/Nicovt0/Api.git /home/ec2-user/mybank-api && cd /home/ec2-user/mybank-api)
           git pull origin main
           
-          # 2. Crear archivo .env (ÚNICO CAMBIO REALIZADO)
+          # 2. Crear archivo .env
           echo -e 'DB_NAME=$DB_NAME\nDB_USER=$DB_USER\nDB_PASSWORD=$DB_PASSWORD\nDB_HOST=$DB_HOST\nDB_PORT=$DB_PORT\nMJ_APIKEY_PUBLIC=$MJ_APIKEY_PUBLIC\nMJ_APIKEY_PRIVATE=$MJ_APIKEY_PRIVATE' > .env
           chmod 600 .env
           
-          # 3. Docker commands (igual que antes)
-          if sudo docker ps -a --filter 'name=api_container' --format '{{.ID}}' | grep -q .; then
-            sudo docker stop api_container || true
-            sudo docker rm -f api_container || true
+          # 3. Docker commands
+          if sudo docker ps -a --filter 'name=mybank_container' --format '{{.ID}}' | grep -q .; then
+            sudo docker stop mybank_container || true
+            sudo docker rm -f mybank_container || true
           fi
           sudo docker container prune -f
-          if sudo docker images -q api | grep -q .; then
-            sudo docker rmi -f $(sudo docker images -q api) || true
+          if sudo docker images -q mybank_image | grep -q .; then
+            sudo docker rmi -f $(sudo docker images -q mybank_image) || true
           fi
           sudo docker system prune -f
           sudo lsof -ti :80 | xargs -r sudo kill -9 || true
-          sudo docker build --no-cache -t api .
+          sudo docker build --no-cache -t mybank_image .
           sudo docker run -d \
-            --name api_container \
+            --name mybank_container \
             --restart unless-stopped \
             -p 80:8000 \
-            -p 443:8000 \
             --env-file .env \
-            api
+            mybank_image
           
           sleep 15
           echo '--- Contenedores activos ---'
           sudo docker ps
-          echo '--- Intento de conexión ---'
-          curl -I http://localhost || echo 'La aplicación no responde aún'
         "
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
