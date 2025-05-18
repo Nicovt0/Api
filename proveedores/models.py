@@ -14,13 +14,25 @@ class Proveedor(models.Model):
     rut_empresa = models.IntegerField()
     puntuacion = models.FloatField()
 
+    class Meta:
+        verbose_name = 'regprovs_proveedor'
+        managed = False
+
 class Marca(models.Model):
     id_marca = models.AutoField(primary_key=True)
     nombre_marca = models.CharField(max_length=100)
 
+    class Meta:
+        verbose_name = 'regprovs_marca'
+        managed = False
+
 class Tipo(models.Model):
     id_tipo = models.AutoField(primary_key=True)
     nombre_tipo = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = 'regprovs_tipo'
+        managed = False
 
 class Prod_Proveedor(models.Model):
     id_producto = models.AutoField(primary_key=True)
@@ -30,6 +42,10 @@ class Prod_Proveedor(models.Model):
     id_proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     id_marca = models.ForeignKey(Marca, on_delete=models.CASCADE)
     id_tipo = models.ForeignKey(Tipo, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'regprovs_prod_proveedor'
+        managed = False
 
 class Orden(models.Model):
     id_orden = models.AutoField(primary_key=True)
