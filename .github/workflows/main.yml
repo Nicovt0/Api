@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy Django to EC2
 
 on:
   push:
@@ -8,57 +8,58 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install SSH key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.EC2_SSH_KEY }}
-        known_hosts: 'just-a-placeholder'
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.EC2_SSH_KEY }}
+          known_hosts: "just-a-placeholder"
 
-    - name: Connect to EC2 and deploy
-      run: |
-        ssh -o StrictHostKeyChecking=no -p ${{ secrets.EC2_PORT || 22 }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
-          # 1. Crear directorio y clonar (si no existe)
-          if [ ! -d "/home/ec2-user/mybank-api" ]; then
-            git clone https://github.com/Nicovt0/Api.git /home/ec2-user/mybank-api
-          fi
-          cd /home/ec2-user/mybank-api
-          git pull origin main
-          
-          # 2. Crear archivo .env
-          echo -e 'DB_NAME=$DB_NAME\nDB_USER=$DB_USER\nDB_PASSWORD=$DB_PASSWORD\nDB_HOST=$DB_HOST\nDB_PORT=$DB_PORT\nMJ_APIKEY_PUBLIC=$MJ_APIKEY_PUBLIC\nMJ_APIKEY_PRIVATE=$MJ_APIKEY_PRIVATE' > .env
-          chmod 600 .env
-          
-          # 3. Docker commands
-          if sudo docker ps -a --filter 'name=mybank_container' --format '{{.ID}}' | grep -q .; then
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            # 1. Crear directorio del proyecto
+            mkdir -p /home/ec2-user/mybank-api
+            cd /home/ec2-user/mybank-api
+
+            # 2. Detener y eliminar contenedores previos
             sudo docker stop mybank_container || true
-            sudo docker rm -f mybank_container || true
-          fi
-          sudo docker container prune -f
-          if sudo docker images -q mybank_image | grep -q .; then
-            sudo docker rmi -f $(sudo docker images -q mybank_image) || true
-          fi
-          sudo docker system prune -f
-          sudo lsof -ti :80 | xargs -r sudo kill -9 || true
-          sudo docker build --no-cache -t mybank_image .
-          sudo docker run -d \
-            --name mybank_container \
-            --restart unless-stopped \
-            -p 80:8000 \
-            --env-file .env \
-            mybank_image
-          
-          sleep 15
-          echo '--- Contenedores activos ---'
-          sudo docker ps
-        "
-      env:
-        DB_NAME: ${{ secrets.DB_NAME }}
-        DB_USER: ${{ secrets.DB_USER }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_HOST: ${{ secrets.DB_HOST }}
-        DB_PORT: ${{ secrets.DB_PORT }}
-        MJ_APIKEY_PUBLIC: ${{ secrets.MJ_APIKEY_PUBLIC }}
-        MJ_APIKEY_PRIVATE: ${{ secrets.MJ_APIKEY_PRIVATE }}
+            sudo docker rm mybank_container || true
+            sudo docker rmi mybank_image || true
+
+            # 3. Clonar/actualizar repositorio
+            if [ ! -d ".git" ]; then
+              git clone https://${{ secrets.GH_TOKEN }}@github.com/Nicovt0/Api.git .
+            else
+              git pull origin main
+            fi
+
+            # 4. Crear archivo .env
+            echo 'DB_NAME=$DB_NAME' > .env
+            echo 'DB_USER=$DB_USER' >> .env
+            echo 'DB_PASSWORD=$DB_PASSWORD' >> .env
+            echo 'DB_HOST=$DB_HOST' >> .env
+            echo 'DB_PORT=$DB_PORT' >> .env
+            echo 'MJ_APIKEY_PUBLIC=$MJ_APIKEY_PUBLIC' >> .env
+            echo 'MJ_APIKEY_PRIVATE=$MJ_APIKEY_PRIVATE' >> .env
+
+            # 5. Construir y ejecutar contenedor
+            sudo docker build -t mybank_image .
+            sudo docker run -d \
+              --name mybank_container \
+              -p 80:8000 \
+              --env-file .env \
+              --restart unless-stopped \
+              mybank_image
+          "
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          MJ_APIKEY_PUBLIC: ${{ secrets.MJ_APIKEY_PUBLIC }}
+          MJ_APIKEY_PRIVATE: ${{ secrets.MJ_APIKEY_PRIVATE }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # Token de GitHub con permisos repo
