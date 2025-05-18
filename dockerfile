@@ -5,10 +5,10 @@ RUN apt-get update && \
         default-libmysqlclient-dev \
         gcc && \
     rm -rf /var/lib/apt/lists/*
-WORKDIR /app
+WORKDIR /Api
 COPY requerimientos.txt .
 RUN pip install --upgrade pip && pip install -r requerimientos.txt
 COPY . .
-RUN cd /app
+RUN cd /Api
 EXPOSE 8000
 CMD [ "python","manage.py","runserver", "0.0.0.0:8000" ]
