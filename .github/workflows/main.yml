@@ -20,9 +20,12 @@ jobs:
     - name: Connect to EC2 and deploy
       run: |
         ssh -o StrictHostKeyChecking=no -p ${{ secrets.EC2_PORT || 22 }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
-          # 1. Actualizar código
-          cd /home/ec2-user/mybank-api || (git clone https://github.com/Nicovt0/Api.git /home/ec2-user/mybank-api && cd /home/ec2-user/mybank-api)
-          git pull origin main
+          # 1. Crear directorio y clonar (si no existe)
+          if [ ! -d "/home/ec2-user/mybank-api" ]; then
+            git clone https://github.com/Nicovt0/Api.git /home/ec2-user/mybank-api
+          fi
+          cd /home/ec2-user/mybank-api
+          git pull origin main
           
           # 2. Crear archivo .env
           echo -e 'DB_NAME=$DB_NAME\nDB_USER=$DB_USER\nDB_PASSWORD=$DB_PASSWORD\nDB_HOST=$DB_HOST\nDB_PORT=$DB_PORT\nMJ_APIKEY_PUBLIC=$MJ_APIKEY_PUBLIC\nMJ_APIKEY_PRIVATE=$MJ_APIKEY_PRIVATE' > .env
