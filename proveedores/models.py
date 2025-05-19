@@ -15,7 +15,7 @@ class Proveedor(models.Model):
     puntuacion = models.FloatField()
 
     class Meta:
-        verbose_name = 'regprovs_proveedor'
+        db_table = 'regprovs_proveedor'
         managed = False
 
 class Marca(models.Model):
@@ -23,7 +23,7 @@ class Marca(models.Model):
     nombre_marca = models.CharField(max_length=100)
 
     class Meta:
-        verbose_name = 'regprovs_marca'
+        db_table = 'regprovs_marca'
         managed = False
 
 class Tipo(models.Model):
@@ -31,7 +31,7 @@ class Tipo(models.Model):
     nombre_tipo = models.CharField(max_length=100)
 
     class Meta:
-        verbose_name = 'regprovs_tipo'
+        db_table = 'regprovs_tipo'
         managed = False
 
 class Prod_Proveedor(models.Model):
@@ -44,7 +44,7 @@ class Prod_Proveedor(models.Model):
     id_tipo = models.ForeignKey(Tipo, on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = 'regprovs_prod_proveedor'
+        db_table = 'regprovs_prod_proveedor'
         managed = False
 
 class Orden(models.Model):
@@ -54,7 +54,15 @@ class Orden(models.Model):
     estado = models.CharField(max_length=50, default='pendiente')
     fecha = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        db_table = 'regprovs_orden'
+        managed = False
+
 class ProductoOrden(models.Model):
     orden = models.ForeignKey(Orden, on_delete=models.CASCADE)
     producto = models.ForeignKey(Prod_Proveedor, on_delete=models.CASCADE)
     cantidad = models.IntegerField()
+
+    class Meta:
+        db_table = 'regprovs_productoorden'
+        managed = False

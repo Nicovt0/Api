@@ -14,17 +14,24 @@ class CrearOrdenAPIView(APIView):
         productos = data.get("productos")  # Lista de IDs
         cantidades = data.get("cantidades")  # Lista de cantidades
 
+        print(f"{id_proveedor}, {productos}, {cantidades} ")
+        print("paso fase 1")
+
         if not (id_proveedor and productos and cantidades):
             return Response({"error": "Parámetros incompletos"}, status=status.HTTP_400_BAD_REQUEST)
+        print("paso fase 2")
 
         proveedor = Proveedor.objects.get(pk=id_proveedor)
         codigo_orden = get_random_string(length=10).upper()
+
+        print(f"{proveedor}, {codigo_orden}")
 
         orden = Orden.objects.create(
             proveedor=proveedor,
             codigo=codigo_orden,
             estado='pendiente'
         )
+        print("paso fase 3")
 
         total = 0
         detalle_producto = ""
