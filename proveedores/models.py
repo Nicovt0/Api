@@ -49,12 +49,20 @@ class Prod_Proveedor(models.Model):
 
 class Orden(models.Model):
     id_orden = models.AutoField(primary_key=True)
-    id_proveedor = models.IntegerField()  
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     codigo = models.CharField(max_length=100)
     estado = models.CharField(max_length=50, default='pendiente')
     fecha = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'regprovs_orden'
+        managed = False
 
 class ProductoOrden(models.Model):
     orden = models.ForeignKey(Orden, on_delete=models.CASCADE)
     producto = models.ForeignKey(Prod_Proveedor, on_delete=models.CASCADE)
     cantidad = models.IntegerField()
+
+    class Meta:
+        db_table = 'regprovs_productoorden'
+        managed = False
