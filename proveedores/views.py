@@ -14,17 +14,26 @@ class CrearOrdenAPIView(APIView):
         productos = data.get("productos")  # Lista de IDs
         cantidades = data.get("cantidades")  # Lista de cantidades
 
+        print(f"{id_proveedor}, {productos}, {cantidades} ")
+        print("paso fase 1")
+
         if not (id_proveedor and productos and cantidades):
             return Response({"error": "Parámetros incompletos"}, status=status.HTTP_400_BAD_REQUEST)
+        print("paso fase 2")
 
-        proveedor = Proveedor.objects.get(pk=id_proveedor)
+        # Verifica que el proveedor exista (pero no lo guardes en una variable a menos que lo necesites para el correo)
+        if not Proveedor.objects.filter(pk=id_proveedor).exists():
+            return Response({"error": "Proveedor no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
         codigo_orden = get_random_string(length=10).upper()
 
+        # Crear la orden con solo el ID del proveedor
         orden = Orden.objects.create(
-            proveedor=proveedor,
+            id_proveedor=id_proveedor,  # Cambiado de proveedor=proveedor a id_proveedor=id_proveedor
             codigo=codigo_orden,
             estado='pendiente'
         )
+        print("paso fase 3")
 
         total = 0
         detalle_producto = ""
@@ -39,6 +48,9 @@ class CrearOrdenAPIView(APIView):
             detalle_producto += f"\n -{producto.nombre_producto} (x{cant}) <br>"
             detalle_precio += f"\n ${producto.precio} <br>"
             detalle_subtotal += f"\n ${subtotal} <br>"
+
+        # Obtener los datos del proveedor para el correo (si es necesario)
+        proveedor = Proveedor.objects.get(pk=id_proveedor)  # Ahora lo obtenemos solo para el correo
 
         mensaje = f"""
         Estimado/a {proveedor.nombre} {proveedor.apellido},
