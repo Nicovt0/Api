@@ -88,6 +88,7 @@ class CrearOrdenAPIView(APIView):
             "total": total
         }, status=status.HTTP_201_CREATED)
 
+
 class ObtenerOrdenAPIView(APIView):
     def post(self, request):
         codigo = request.data.get("codigo")
@@ -117,6 +118,40 @@ class ObtenerOrdenAPIView(APIView):
             }, status=status.HTTP_200_OK)
         except Orden.DoesNotExist:
             return Response({"error": "Orden no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ObtenerOrdenesAPIView(APIView):
+    def post(self, request):
+        id_proveedor = request.data.get("id_proveedor")
+        try:
+            proveedor = Proveedor.objects.get(id_proveedor=id_proveedor)
+            ordenes = Orden.objects.filter(proveedor=proveedor)
+
+            resultado = []
+            for orden in ordenes:
+                productos = ProductoOrden.objects.filter(orden=orden)
+                detalle = []
+                for p in productos:
+                    detalle.append({
+                        "producto": p.producto.nombre_producto,
+                        "cantidad": p.cantidad,
+                        "precio_unitario": p.producto.precio,
+                        "subtotal": p.producto.precio * p.cantidad
+                    })
+                resultado.append({
+                    "codigo": orden.codigo,
+                    "estado": orden.estado,
+                    "proveedor": {
+                        "nombre": proveedor.nombre,
+                        "correo": proveedor.correo,
+                        "rut": f"{proveedor.rut}-{proveedor.dv}"
+                    },
+                    "fecha": orden.fecha,
+                    "productos": detalle
+                })
+            return Response(resultado, status=status.HTTP_200_OK)
+        except Proveedor.DoesNotExist:
+            return Response({"error": "Proveedor no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class EliminarOrdenAPIView(APIView):
