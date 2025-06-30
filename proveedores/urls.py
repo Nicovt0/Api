@@ -4,6 +4,7 @@ from .views import (
     ObtenerOrdenAPIView, 
     EliminarOrdenAPIView,
     ModificarEstadoOrdenAPIView,
+    ObtenerOrdenesAPIView,
     )
 
 urlpatterns = [
@@ -11,4 +12,5 @@ urlpatterns = [
     path('orden/obtener/', ObtenerOrdenAPIView.as_view()),
     path('orden/eliminar/', EliminarOrdenAPIView.as_view()),
     path('orden/modificar-estado/', ModificarEstadoOrdenAPIView.as_view()),
+    path('ordenes/obtener/', ObtenerOrdenesAPIView.as_view()),
 ]
